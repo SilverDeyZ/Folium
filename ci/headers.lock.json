@@ -1,6 +1,14 @@
 {
   "sources": [
     {
+      "name": "spirv-headers",
+      "repository": "https://github.com/KhronosGroup/SPIRV-Headers",
+      "version": "vulkan-sdk-1.4.363.0",
+      "revision": "496543121ce6419f23d6fa5d7194ba66c36212d2",
+      "url": "https://codeload.github.com/KhronosGroup/SPIRV-Headers/tar.gz/496543121ce6419f23d6fa5d7194ba66c36212d2",
+      "sha256": "a9bb9c48713245eacf97cc539b6f1d45405a92d8813f8b82e635f0a085ee9898"
+    },
+    {
       "name": "vulkan-headers",
       "repository": "https://github.com/KhronosGroup/Vulkan-Headers",
       "version": "vulkan-sdk-1.4.363.0",

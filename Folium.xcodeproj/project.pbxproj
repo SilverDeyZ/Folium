@@ -2747,6 +2747,7 @@
 				SWIFT_VERSION = 6.0;
 				SYSTEM_HEADER_SEARCH_PATHS = (
 					"$(inherited)",
+					"$(SOURCE_ROOT)/build/headers/spirv-headers/include",
 					"$(SOURCE_ROOT)/build/headers/vulkan-headers/include",
 					"$(SOURCE_ROOT)/build/headers/vulkan-hpp",
 					"$(SOURCE_ROOT)/build/headers/glslang",
@@ -2797,6 +2798,7 @@
 				SWIFT_VERSION = 6.0;
 				SYSTEM_HEADER_SEARCH_PATHS = (
 					"$(inherited)",
+					"$(SOURCE_ROOT)/build/headers/spirv-headers/include",
 					"$(SOURCE_ROOT)/build/headers/vulkan-headers/include",
 					"$(SOURCE_ROOT)/build/headers/vulkan-hpp",
 					"$(SOURCE_ROOT)/build/headers/glslang",

@@ -2,7 +2,7 @@
 
 Prepared on 2026-11-12 in `C:\Users\Dragon\Documents\Projects\Folium-IPA\Folium`.
 
-Two hosted builds have been attempted on the fork. The second passed dependency validation and reached compilation, where MesenCE selected the wrong `pch.h`. A successful IPA build, Sideloadly installation, and physical iPhone test remain pending.
+Three hosted builds have been attempted on the fork. The third successfully built MesenCE, then stopped in Cytrus because the Sirit dependency requires SPIR-V headers. A successful IPA build, Sideloadly installation, and physical iPhone test remain pending.
 
 ## Prepared locally
 
@@ -12,14 +12,14 @@ Two hosted builds have been attempted on the fork. The second passed dependency 
 - All ten core submodules are initialized recursively at the committed revisions. Cytrus is `d421219acdcb0ad5494ab68777a52a87465fd8ae`.
 - The five Swift package revisions in the upstream `Package.resolved` are preserved. Xcode resolves their sources and checksum-protected binary downloads on macOS.
 - All ten tracked XCFrameworks have an arm64 iOS device slice with a real binary. On Windows, this verifies metadata, file presence, and SHA-256; the runner additionally checks with `file`, `lipo`, and `otool`.
-- Vulkan C headers, Vulkan-Hpp, glslang headers, and VMA sources are downloaded under ignored `build/headers/`, outside Xcode's synchronized source folders. Commit URLs and archive SHA-256 values are in `ci/headers.lock.json`.
+- SPIR-V headers, Vulkan C headers, Vulkan-Hpp, glslang headers, and VMA sources are downloaded under ignored `build/headers/`, outside Xcode's synchronized source folders. Commit URLs and archive SHA-256 values are in `ci/headers.lock.json`.
 - Cytrus's Debug and Release system header search paths use those repository-relative directories and preserve inherited paths.
 - `ci/iphone.xcconfig` selects iPhone and disables developer signing for the diagnostic build. It keeps upstream's minimum OS version; **iOS 27.2 is the physical test OS**, not an assumed installed SDK version.
 - `.github/workflows/folium-ipa.yml` supplies a manual macOS build, IPA/provenance artifact, and separate logs on success or failure.
 
 The upstream README contains an app description but no build instructions. [The adapted plan](docs/folium-plan.md) supplies the build approach. The header versions match the upstream Vulkan SDK search version where possible; their compatibility with the prebuilt glslang libraries still needs the first clean macOS build.
 
-Local verification passed: source/XCFramework preflight, all four archive checksums and header-tree revalidation, accessibility of all five locked package commits, Python compilation, Bash syntax, Git whitespace checks, and actionlint 1.7.12. Actionlint was configured to recognize the newly documented `xcode-27` label; ShellCheck was unavailable. Both build and packaging commands were also checked to reject Windows execution without producing an IPA.
+Local verification covers source/XCFramework preflight, pinned archive checksums and header-tree revalidation, accessibility of all five locked package commits, seven regression tests, Python compilation, Bash syntax, Git whitespace checks, and actionlint 1.7.12. Actionlint was configured to recognize the documented `xcode-27` label; ShellCheck was unavailable. Both build and packaging commands were also checked to reject Windows execution without producing an IPA.
 
 ## Validate or refresh on Windows
 
@@ -46,6 +46,12 @@ Framework discovery now selects directories and excludes `__MACOSX` and `._*` me
 
 The local correction moves the downloaded sources outside the synchronized `Dependencies` folder, updates Cytrus's Debug/Release search paths to `build/headers`, and explicitly includes `System/Core/pch.h` at the start of `MesenCE/mesence.h`. Seven local regression tests now cover archive discovery and migration of existing header downloads. The next hosted build must establish whether compilation completes; this correction is not yet an IPA build result.
 
+## Cytrus SPIR-V header failure and correction
+
+[Run #3](https://github.com/SilverDeyZ/Folium/actions/runs/43272418341) confirmed the MesenCE correction: `libMesenCE.a` was built successfully. Cytrus then failed compiling `vk_shader_disk_cache.cpp` because Sirit's `sirit.h` includes `spirv/unified1/spirv.hpp11`, which was not supplied by the previous four header downloads.
+
+The local correction adds Khronos SPIRV-Headers at SDK tag `vulkan-sdk-1.4.363.0`, commit `496543121ce6419f23d6fa5d7194ba66c36212d2`, with archive SHA-256 `a9bb9c48713245eacf97cc539b6f1d45405a92d8813f8b82e635f0a085ee9898`. Cytrus's Debug and Release search paths now include `build/headers/spirv-headers/include`, and the fetcher verifies `spirv.hpp11` and `GLSL.std.450.h` before compilation. Package and core revisions are unchanged. This correction has not yet been tested by a hosted build.
+
 ## Push the correction and start a new run
 
 `origin` points to [SilverDeyZ/Folium](https://github.com/SilverDeyZ/Folium), and `upstream` points to `folium-app/Folium`. The workflow already exists on the fork's default branch. The correction is currently local and uncommitted.
@@ -53,8 +59,8 @@ The local correction moves the downloaded sources outside the synchronized `Depe
 1. Commit and push the correction from this repository:
 
    ```powershell
-   git add MesenCE/mesence.h Folium.xcodeproj/project.pbxproj ci/fetch-headers.py ci/test_fetch_headers.py SETUP.md docs/folium-plan.md
-   git commit -m "Prevent downloaded headers from shadowing MesenCE pch"
+   git add Folium.xcodeproj/project.pbxproj ci/headers.lock.json ci/fetch-headers.py SETUP.md docs/folium-plan.md
+   git commit -m "Add pinned SPIR-V headers for Cytrus"
    git push origin codex/folium-diagnostic-ipa
    ```
 

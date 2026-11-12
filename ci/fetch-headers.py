@@ -69,6 +69,8 @@ def main():
             else:
                 roots[0].rename(target)
     required = [
+        "spirv-headers/include/spirv/unified1/spirv.hpp11",
+        "spirv-headers/include/spirv/unified1/GLSL.std.450.h",
         "vulkan-headers/include/vulkan/vulkan.h",
         "vulkan-hpp/vulkan/vulkan.hpp",
         "glslang/glslang/Public/ShaderLang.h",
