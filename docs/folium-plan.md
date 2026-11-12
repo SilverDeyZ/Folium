@@ -8,7 +8,7 @@ Target device: **iPhone running iOS 27.2**.
 
 The source is cloned in `C:\Users\Dragon\Documents\Projects\Folium-IPA\Folium` on `codex/folium-diagnostic-ipa` at the inspected baseline. All ten pinned submodules are initialized. The manual IPA workflow, header locks/fetcher, repository-relative Cytrus paths, source/binary preflight, and packaging scripts are prepared locally. See `Folium/SETUP.md` in this workspace (or `SETUP.md` from the repository root) for verified checks and exact next steps.
 
-This status records local preparation only. Fork creation, commit/push, remote build, package resolution with Xcode, IPA production, Sideloadly installation, and physical-device testing are still pending. The original steps below remain the full build-and-test plan.
+The setup is published to `SilverDeyZ/Folium`. Hosted run #1 (`43258503264`) used Xcode 27.1/iPhoneOS SDK 27.1 and resolved all five locked packages, then failed before compilation when preflight treated `__MACOSX/._SDL3.xcframework` metadata as a framework directory. The local correction filters metadata and includes four passing regression tests; it has not yet been committed, pushed, or run remotely. Compilation, IPA production, Sideloadly installation, and physical-device testing remain pending. The original steps below remain the full build-and-test plan.
 
 ## Feasibility
 

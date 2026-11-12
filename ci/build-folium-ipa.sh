@@ -35,6 +35,7 @@ LOCK="Folium.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 cp "$LOCK" "$LOGS/Package.resolved"
 git diff --binary HEAD > "$LOGS/source.patch"
 git status --short > "$LOGS/source-status.txt"
+python3 -m unittest discover -s ci -p 'test_*.py' -v 2>&1 | tee "$LOGS/preflight-tests.log"
 python3 ci/preflight.py --output "$LOGS/source-manifest.json"
 python3 ci/fetch-headers.py
 

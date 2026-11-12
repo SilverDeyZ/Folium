@@ -24,6 +24,16 @@ def sha256(path):
     return digest.hexdigest()
 
 
+def discover_xcframeworks(root):
+    """Find bundle directories, excluding AppleDouble metadata from macOS ZIPs."""
+    return sorted(
+        path for path in root.rglob("*.xcframework")
+        if path.is_dir()
+        and not any(part == "__MACOSX" or part.startswith("._")
+                    for part in path.relative_to(root).parts)
+    )
+
+
 def inspect_framework(path):
     with (path / "Info.plist").open("rb") as content:
         info = plistlib.load(content)
@@ -79,13 +89,13 @@ def main():
     for pin in pins:
         if len(pin["state"]["revision"]) != 40:
             raise ValueError(f"Unpinned package: {pin['identity']}")
-    frameworks = sorted((ROOT / "Dependencies").rglob("*.xcframework"))
+    frameworks = discover_xcframeworks(ROOT / "Dependencies")
     if not frameworks:
         raise ValueError("Tracked XCFrameworks are missing")
     if args.artifacts:
         if not args.artifacts.is_dir():
             raise ValueError(f"SwiftPM artifacts directory is missing: {args.artifacts}")
-        resolved = sorted(args.artifacts.resolve().rglob("*.xcframework"))
+        resolved = discover_xcframeworks(args.artifacts.resolve())
         if not resolved:
             raise ValueError("No resolved binary XCFrameworks found")
         frameworks += resolved

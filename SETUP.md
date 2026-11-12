@@ -2,7 +2,7 @@
 
 Prepared on 2026-11-12 in `C:\Users\Dragon\Documents\Projects\Folium-IPA\Folium`.
 
-This is a local source and CI setup. A macOS build, downloaded IPA, Sideloadly installation, and physical iPhone test have not been performed.
+The first hosted build was attempted on the fork. Package resolution succeeded, but preflight failed before app compilation. A successful IPA build, Sideloadly installation, and physical iPhone test remain pending.
 
 ## Prepared locally
 
@@ -34,24 +34,26 @@ git submodule status --recursive
 
 The fetcher verifies archive checksums before extraction. Rerunning it also checks existing header contents against the verified sources and refuses to replace modified files. `build/source-manifest.json` records source, core, package, and tracked binary revisions/checksums. `build/` and downloaded header sources are ignored by Git.
 
-## Publish the setup to your fork and run the build
+## First hosted run and correction
 
-The local `origin` currently points to upstream. No fork has been created, no changes have been committed or pushed, and no remote workflow has been dispatched by this setup.
+[Run #1](https://github.com/SilverDeyZ/Folium/actions/runs/43258503264) used Xcode 27.1 with the iPhoneOS 27.1 SDK and resolved all five packages at their locked revisions. It stopped while preflight tried to open `__MACOSX/._SDL3.xcframework/Info.plist`: that matching filename is AppleDouble metadata, not a framework directory. The Node.js deprecation warning was separate from the failure.
 
-1. Create or use your own [Folium fork](https://github.com/folium-app/Folium/fork).
-2. Configure this checkout with the upstream fetch remote and your fork as `origin`. Substitute your actual account in the URL:
+Framework discovery now selects directories and excludes `__MACOSX` and `._*` metadata entries. Real malformed frameworks and simulator-only slices still fail validation. Four regression tests pass and run before preflight in CI. The checkout and artifact actions are also updated to SHA-pinned Node.js 24 releases.
+
+## Push the correction and start a new run
+
+`origin` points to [SilverDeyZ/Folium](https://github.com/SilverDeyZ/Folium), and `upstream` points to `folium-app/Folium`. The workflow already exists on the fork's default branch. The correction is currently local and uncommitted.
+
+1. Commit and push the correction from this repository:
 
    ```powershell
-   git remote rename origin upstream
-   git remote add origin https://github.com/YOUR-ACCOUNT/Folium.git
-   git add .gitattributes .gitignore README.md SETUP.md docs ci .github Folium.xcodeproj/project.pbxproj
-   git commit -m "Set up diagnostic iPhone IPA build"
-   git push -u origin codex/folium-diagnostic-ipa
+   git add ci/preflight.py ci/test_preflight.py ci/build-folium-ipa.sh .github/workflows/folium-ipa.yml SETUP.md docs/folium-plan.md
+   git commit -m "Ignore macOS archive metadata in IPA preflight"
+   git push origin codex/folium-diagnostic-ipa
    ```
 
-3. Merge the setup branch into the fork's default branch through a pull request. GitHub requires the dispatchable workflow to exist on the default branch before it appears for manual runs.
-4. In the fork's **Actions** tab, enable workflows if prompted, select **Folium diagnostic IPA**, choose the diagnostic branch, and select **Run workflow**.
-5. Download `Folium-iPhone-iOS-27.2-<commit>` after a successful run. It contains the `.ipa`, `.sha256`, `build-manifest.json`, package/header locks, toolchain information, and source patch/status. Failed runs retain a separate `Folium-logs-...` artifact when logs are available.
+2. In the fork's **Actions** tab, select **Folium diagnostic IPA**, select **Run workflow**, choose **codex/folium-diagnostic-ipa**, and start the new run. Rerunning the old failed job uses its old commit and will not include this correction.
+3. Download `Folium-iPhone-iOS-27.2-<commit>` after a successful run. It contains the `.ipa`, `.sha256`, `build-manifest.json`, package/header locks, toolchain information, and source patch/status. Failed runs retain a separate `Folium-logs-...` artifact when logs are available.
 
 The workflow uses the documented [`xcode-27` arm64 runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners). Its installed Xcode and iPhoneOS SDK versions are recorded in each run; they are not silently pinned by the label. Checkout and upload actions are pinned to release commit SHAs. The checked-in dependencies contain actual binaries, so LFS is not enabled.
 
@@ -72,4 +74,4 @@ Every invocation creates fresh `build/diagnostic.XXXXXX/DerivedData` and staging
 5. Check graphics, both 3DS screens, touch/controller input, audio, save/load, and relaunch after terminating the app. Collect crash/emulator logs for failures.
 6. Investigate JIT separately after the interpreter baseline runs. Activation and performance on iOS 27.2 are unverified; no Henge entitlements, helper, RAM changes, or JIT patches are included.
 
-The local setup is ready for its first macOS build. Successful compilation, dependency ABI compatibility, installation, and physical-device behavior remain to be established. The plan's final completion criterion still requires a working 3DS test on the physical iPhone.
+The local correction is ready for another macOS build. Successful compilation, dependency ABI compatibility, installation, and physical-device behavior remain to be established. The plan's final completion criterion still requires a working 3DS test on the physical iPhone.
