@@ -6,9 +6,9 @@ Inspected: 2026-11-12. Upstream: [folium-app/Folium](https://github.com/folium-a
 
 Target device: **iPhone running iOS 27.2**.
 
-The source is cloned in `C:\Users\Dragon\Documents\Projects\Folium-IPA\Folium` on `codex/folium-diagnostic-ipa` at the inspected baseline. All ten pinned submodules are initialized. The manual IPA workflow, header locks/fetcher, repository-relative Cytrus paths, source/binary preflight, and packaging scripts are prepared locally. See `Folium/SETUP.md` in this workspace (or `SETUP.md` from the repository root) for verified checks and exact next steps.
+The source is cloned in `C:\Users\Dragon\Documents\Projects\Folium-IPA\Folium` on `codex/folium-diagnostic-ipa` based on the inspected upstream baseline. All ten pinned submodules are initialized. The manual IPA workflow, header locks/fetcher, repository-relative Cytrus paths, source/binary preflight, and packaging scripts are prepared locally. See `Folium/SETUP.md` in this workspace (or `SETUP.md` from the repository root) for verified checks and exact next steps.
 
-The setup is published to `SilverDeyZ/Folium`. Hosted run #1 (`43258503264`) used Xcode 27.1/iPhoneOS SDK 27.1 and resolved all five locked packages, then failed before compilation when preflight treated `__MACOSX/._SDL3.xcframework` metadata as a framework directory. The local correction filters metadata and includes four passing regression tests; it has not yet been committed, pushed, or run remotely. Compilation, IPA production, Sideloadly installation, and physical-device testing remain pending. The original steps below remain the full build-and-test plan.
+The setup is published to `SilverDeyZ/Folium`. Hosted run #2 (`43263613629`) passed dependency validation, including 26 arm64 iOS XCFrameworks, and reached compilation. MesenCE then included glslang's downloaded `pch.h` instead of its own core header. The local correction moves downloaded sources from the Xcode-synchronized `Dependencies/CIHeaders` folder to ignored `build/headers`, updates Cytrus search paths, and explicitly includes MesenCE's core header. Seven regression tests pass. The correction has not yet been committed, pushed, or run remotely. Successful compilation, IPA production, Sideloadly installation, and physical-device testing remain pending. The original steps below remain the full build-and-test plan.
 
 ## Feasibility
 

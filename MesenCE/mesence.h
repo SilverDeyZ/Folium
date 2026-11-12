@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "System/Core/pch.h"
 #include "Emulator.h"
 #include "SMS/Input/ColecoVisionController.h"
 #include "Gameboy/Input/GbController.h"

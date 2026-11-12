@@ -11,6 +11,27 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def prepare_destination(root):
+    """Keep downloaded sources outside Xcode's synchronized project folders."""
+    root = root.resolve()
+    destination = root / "build/headers"
+    legacy = root / "Dependencies/CIHeaders"
+    for path in (destination, legacy):
+        if not path.resolve().is_relative_to(root):
+            raise ValueError(f"Header directory resolves outside this checkout: {path}")
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if legacy.exists():
+        if destination.exists():
+            raise ValueError(
+                f"Both {legacy} and {destination} exist. Move {legacy} outside "
+                "Dependencies before building; Xcode scans it into project header maps."
+            )
+        legacy.rename(destination)
+        print(f"Moved existing native headers to {destination}", flush=True)
+    destination.mkdir(parents=True, exist_ok=True)
+    return destination
+
+
 def tree_digest(directory):
     digest = hashlib.sha256()
     for path in sorted(directory.rglob("*")):
@@ -21,8 +42,7 @@ def tree_digest(directory):
 
 
 def main():
-    destination = ROOT / "Dependencies/CIHeaders"
-    destination.mkdir(parents=True, exist_ok=True)
+    destination = prepare_destination(ROOT)
     sources = json.loads((ROOT / "ci/headers.lock.json").read_text())["sources"]
     for source in sources:
         target = destination / source["name"]

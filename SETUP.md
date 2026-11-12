@@ -2,7 +2,7 @@
 
 Prepared on 2026-11-12 in `C:\Users\Dragon\Documents\Projects\Folium-IPA\Folium`.
 
-The first hosted build was attempted on the fork. Package resolution succeeded, but preflight failed before app compilation. A successful IPA build, Sideloadly installation, and physical iPhone test remain pending.
+Two hosted builds have been attempted on the fork. The second passed dependency validation and reached compilation, where MesenCE selected the wrong `pch.h`. A successful IPA build, Sideloadly installation, and physical iPhone test remain pending.
 
 ## Prepared locally
 
@@ -12,7 +12,7 @@ The first hosted build was attempted on the fork. Package resolution succeeded, 
 - All ten core submodules are initialized recursively at the committed revisions. Cytrus is `d421219acdcb0ad5494ab68777a52a87465fd8ae`.
 - The five Swift package revisions in the upstream `Package.resolved` are preserved. Xcode resolves their sources and checksum-protected binary downloads on macOS.
 - All ten tracked XCFrameworks have an arm64 iOS device slice with a real binary. On Windows, this verifies metadata, file presence, and SHA-256; the runner additionally checks with `file`, `lipo`, and `otool`.
-- Vulkan C headers, Vulkan-Hpp, glslang headers, and VMA sources are downloaded under ignored `Dependencies/CIHeaders/`. Commit URLs and archive SHA-256 values are in `ci/headers.lock.json`.
+- Vulkan C headers, Vulkan-Hpp, glslang headers, and VMA sources are downloaded under ignored `build/headers/`, outside Xcode's synchronized source folders. Commit URLs and archive SHA-256 values are in `ci/headers.lock.json`.
 - Cytrus's Debug and Release system header search paths use those repository-relative directories and preserve inherited paths.
 - `ci/iphone.xcconfig` selects iPhone and disables developer signing for the diagnostic build. It keeps upstream's minimum OS version; **iOS 27.2 is the physical test OS**, not an assumed installed SDK version.
 - `.github/workflows/folium-ipa.yml` supplies a manual macOS build, IPA/provenance artifact, and separate logs on success or failure.
@@ -32,13 +32,19 @@ python ci/fetch-headers.py
 git submodule status --recursive
 ```
 
-The fetcher verifies archive checksums before extraction. Rerunning it also checks existing header contents against the verified sources and refuses to replace modified files. `build/source-manifest.json` records source, core, package, and tracked binary revisions/checksums. `build/` and downloaded header sources are ignored by Git.
+The fetcher verifies archive checksums before extraction. Rerunning it also checks existing header contents against the verified sources and refuses to replace modified files. Existing downloads in `Dependencies/CIHeaders/` are moved to `build/headers/` without deleting them. If both locations exist, move the legacy tree outside `Dependencies` before rerunning. `build/source-manifest.json` records source, core, package, and tracked binary revisions/checksums. `build/` and downloaded header sources are ignored by Git.
 
 ## First hosted run and correction
 
 [Run #1](https://github.com/SilverDeyZ/Folium/actions/runs/43258503264) used Xcode 27.1 with the iPhoneOS 27.1 SDK and resolved all five packages at their locked revisions. It stopped while preflight tried to open `__MACOSX/._SDL3.xcframework/Info.plist`: that matching filename is AppleDouble metadata, not a framework directory. The Node.js deprecation warning was separate from the failure.
 
 Framework discovery now selects directories and excludes `__MACOSX` and `._*` metadata entries. Real malformed frameworks and simulator-only slices still fail validation. Four regression tests pass and run before preflight in CI. The checkout and artifact actions are also updated to SHA-pinned Node.js 24 releases.
+
+## MesenCE compilation failure and correction
+
+[Run #2](https://github.com/SilverDeyZ/Folium/actions/runs/43263613629) passed all four regression tests and validated 26 arm64 iOS XCFrameworks, then failed while compiling `MesenCE/mesence.cpp`. The include trace shows `Emulator.h` resolving `#include "pch.h"` to `Dependencies/CIHeaders/glslang/glslang/HLSL/pch.h`, producing missing `string`, `thread`, `__forceinline`, and `__noinline` definitions. The file was present; Xcode selected a foreign header with the same name.
+
+The local correction moves the downloaded sources outside the synchronized `Dependencies` folder, updates Cytrus's Debug/Release search paths to `build/headers`, and explicitly includes `System/Core/pch.h` at the start of `MesenCE/mesence.h`. Seven local regression tests now cover archive discovery and migration of existing header downloads. The next hosted build must establish whether compilation completes; this correction is not yet an IPA build result.
 
 ## Push the correction and start a new run
 
@@ -47,8 +53,8 @@ Framework discovery now selects directories and excludes `__MACOSX` and `._*` me
 1. Commit and push the correction from this repository:
 
    ```powershell
-   git add ci/preflight.py ci/test_preflight.py ci/build-folium-ipa.sh .github/workflows/folium-ipa.yml SETUP.md docs/folium-plan.md
-   git commit -m "Ignore macOS archive metadata in IPA preflight"
+   git add MesenCE/mesence.h Folium.xcodeproj/project.pbxproj ci/fetch-headers.py ci/test_fetch_headers.py SETUP.md docs/folium-plan.md
+   git commit -m "Prevent downloaded headers from shadowing MesenCE pch"
    git push origin codex/folium-diagnostic-ipa
    ```
 
